@@ -3,7 +3,7 @@ __author__ = 'pl534'
 import socket
 import argparse
 
-host = 'localhost'
+host = '0.0.0.0'
 data_payload = 2048
 backlog = 5
 ack = '23.24'
