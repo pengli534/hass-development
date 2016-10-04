@@ -1,0 +1,70 @@
+/**
+ * DESCRIPTION
+ * Example sketch showing how to control physical relays. 
+ * This example will remember relay state after power failure.
+ * http://www.mysensors.org/build/relay
+ * Working fine with Serial GW version 1.5.4
+ */ 
+
+#include <MySigningNone.h>
+#include <MyTransportNRF24.h>
+#include <MyTransportRFM69.h>
+#include <MyHwATMega328.h>
+#include <MySensor.h>
+#include <SPI.h>
+
+#define SN "relay test"
+#define SV "1.0"
+
+#define NODE_ID 19
+
+#define RELAY_PIN  3  // Arduino Digital I/O pin number for first relay (second on pin+1 etc)
+#define RELAY_CHILD 1 
+#define NUMBER_OF_RELAYS 1 // Total number of attached relays
+#define RELAY_ON 1  // GPIO value to write to turn on attached relay
+#define RELAY_OFF 0 // GPIO value to write to turn off attached relay
+
+
+// NRFRF24L01 radio driver (set low transmit power by default) 
+MyTransportNRF24 radio(RF24_CE_PIN, RF24_CS_PIN, RF24_PA_LEVEL_GW);  
+
+// Select AtMega328 hardware profile
+MyHwATMega328 hw;
+
+// Construct MySensors library
+MySensor gw(radio, hw);
+MyMessage msg(RELAY_CHILD, V_STATUS);
+
+void setup()  
+{   
+  // Initialize library and add callback for incoming messages
+  gw.begin(incomingMessage, NODE_ID);
+  
+  // Send the sketch version information to the gateway and Controller
+  gw.sendSketchInfo(SN, SV);
+  gw.present(RELAY_CHILD, S_LIGHT);
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, RELAY_OFF);
+  gw.send(msg.set(0));
+}
+
+void loop() 
+{
+  // Alway process incoming messages whenever possible
+  gw.process();
+}
+
+void incomingMessage(const MyMessage &message) {
+  // We only expect one type of message from controller. But we better check anyway.
+  if (message.type==V_STATUS) {
+    
+     // Change relay state
+     digitalWrite(RELAY_PIN, message.getBool()?RELAY_ON:RELAY_OFF);
+
+      // debug info
+     Serial.print("Incoming change for sensor:");
+     Serial.print(message.sensor);
+     Serial.print(", New status: ");
+     Serial.println(message.getBool());
+   } 
+}
