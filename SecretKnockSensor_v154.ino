@@ -81,7 +81,7 @@ boolean programModeActive = false;   // True if we're trying to program a new kn
 
 bool lockStatus;
 MySensor gw;
-MyMessage lockMsg(CHILD_ID, V_LOCK_STATUS);
+MyMessage lockMsg(CHILD_ID, V_LIGHT);
 
 // Unlocks the door.
 void setLockState(bool state, bool send){
@@ -101,9 +101,9 @@ void setLockState(bool state, bool send){
 
 void incomingMessage(const MyMessage &message) {
   // We only expect one type of message from controller. But we better check anyway.
-  if (message.type==V_LOCK_STATUS) {
+  if (message.type==V_LIGHT) {
      // Change relay state
-     setLockState(message.getBool(), false); 
+     setLockState(message.getBool(), true); 
   
      // Write some debug info
      Serial.print("Incoming lock status:");
@@ -111,7 +111,6 @@ void incomingMessage(const MyMessage &message) {
    } 
 }
 
- 
 //saves a new pattern too eeprom
 void saveSecretKnock(){
   gw.saveState(1, 0); // clear out the signature. That way we know if we didn't finish the write successfully.
@@ -209,7 +208,6 @@ boolean validateKnock(){
   return true;
 }
  
- 
 // reads the secret knock from EEPROM. (if any.)
 void readSecretKnock(){
   byte reading;
@@ -244,10 +242,10 @@ void setup() {
   pinMode(programButton, INPUT);
   digitalWrite(programButton, HIGH); // Enable internal pull up 
 
-  gw.begin(incomingMessage);
+  gw.begin(incomingMessage, AUTO, true);
   
-  gw.sendSketchInfo("Secret Knock", "1.0");
-  gw.present(CHILD_ID, S_LOCK);
+  gw.sendSketchInfo("Relay", "1.0");
+  gw.present(CHILD_ID, S_LIGHT);
   
   readSecretKnock();   // Load the secret knock (if any) from EEPROM.
   
@@ -368,9 +366,3 @@ void loop() {
   }
  
 } 
- 
- 
- 
-
-
-
