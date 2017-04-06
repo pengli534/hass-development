@@ -1,0 +1,70 @@
+// Sketch for double relay Actuators with buttons with/without DS18B20 temp sensor
+// in loop() method, if (value2 != oldValue) {...} can be changed for Rocker switch
+// this sketch is coded under mysensor with version 1.5.4
+//　用于智能管理系统　服务器不能穿入内网的情况，控制器必须不停通过ｔｃｐ连接服务器更新信息，并等待远程控制指令
+// pengli534@gmail.com
+
+#include <MySensor.h>
+#include <SPI.h>
+
+#define RELAY_PIN 5  // Arduino Digital I/O pin number for relay 
+#define CHILD_ID 1 // Id of the sensor child
+
+#define RELAY_ON 1
+#define RELAY_OFF 0
+
+unsigned long SLEEP_TIME = 3000; // Sleep time between reads (in milliseconds)
+bool state;
+
+MySensor gw;
+MyMessage msg(CHILD_ID,V_LIGHT);
+
+void incomingMessage(const MyMessage &message) {
+  if (message.isAck()) {
+     Serial.println("This is an ack from gateway");
+  }
+  if (message.type == V_LIGHT && message.sensor == 1) {
+     // Change relay state
+     state = message.getBool();
+     digitalWrite(RELAY_PIN, state?RELAY_ON:RELAY_OFF);
+     // Store state in eeprom
+     gw.saveState(CHILD_ID, state);
+    
+     // Write some debug info
+     Serial.print("Incoming change for sensor:");
+     Serial.print(message.sensor);
+     Serial.print(", New status: ");
+     Serial.println(message.getBool());
+   } 
+}
+
+
+void setup()  
+{  
+  gw.begin(incomingMessage, AUTO, true);
+  gw.sendSketchInfo("Double Relay & Button", "0.1");
+
+  // Register all sensors to gw (they will be created as child devices)
+  gw.present(CHILD_ID, S_LIGHT);
+
+  // Make sure relays are off when starting up
+  digitalWrite(RELAY_PIN, RELAY_OFF);
+  
+  // Then set relay pins in output mode
+  pinMode(RELAY_PIN, OUTPUT);   
+      
+  // Set relay to last known state (using eeprom storage) 
+  state = gw.loadState(CHILD_ID);
+  digitalWrite(RELAY_PIN, state?RELAY_ON:RELAY_OFF);
+}
+
+
+/*
+*  Example on how to asynchronously check for new messages from gw
+*/
+void loop() 
+{
+  gw.process();
+  gw.send(msg.set(state?RELAY_ON:RELAY_OFF));
+  gw.wait(SLEEP_TIME); //sleep a bit
+} 
