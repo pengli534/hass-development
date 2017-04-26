@@ -71,18 +71,24 @@ void setup()
 
 
 unsigned long flag = 0;
+unsigned long sptimer = 0;
+//boolean real_flag = 0;
+
 void loop()      
 {     
-  int lux = digitalRead(soundSensor);;// Get Lux value
-  
+  int lux = digitalRead(soundSensor); // Get Lux value
   if (lux != lastlux) {
-      //gw.send(msg.set(lux));
       flag++;
       Serial.println(flag);
       lastlux = lux;
-
-      gw.wait(1000);
+      gw.wait(500); 
   }
-  
- // gw.sleep(SLEEP_TIME);
+  else{
+      sptimer++;
+      if (sptimer>99999){
+        flag = 0;
+        sptimer = 0;
+        gw.wait(10);
+      }
+      }
 }
